@@ -14,7 +14,7 @@ module NeuralNetwork #(
     output out_valid
 );
 
-    "layer 1 output bus and valid"
+    //layer 1 output bus and valid"
     wire [30*dataWidth-1:0] l1_out;
     wire l1_valid;
 
@@ -34,12 +34,12 @@ module NeuralNetwork #(
     wire [10*dataWidth-1:0] l5_out;
     wire l5_valid;
 
-    "serializer wires between layers"
+    //serializer wires between layers"
     wire [dataWidth-1:0] s1_data, s2_data, s3_data, s4_data;
     wire s1_valid, s2_valid, s3_valid, s4_valid;
     wire s1_done, s2_done, s3_done, s4_done;
 
-    "dummy wires for unused ports"
+    //dummy wires for unused ports"
     wire [31:0] config_layer_num = 32'd0;
     wire [31:0] config_neuron_num = 32'd0;
     wire weightValid = 1'b0;
@@ -48,6 +48,7 @@ module NeuralNetwork #(
     wire [31:0] biasValue   = 32'd0;
 
     //Layer 1: 784 inputs, 30 neurons, sigmoid
+    layer #(
         .layerNo(1), .numNeurons(30), .numWeights(784),
         .dataWidth(dataWidth), .sigmoidSize(sigmoidSize),
         .weightIntWidth(weightIntWidth), .actType("sigmoid"),
