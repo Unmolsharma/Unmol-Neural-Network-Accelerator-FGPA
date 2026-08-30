@@ -12,8 +12,9 @@ module neuron # (parameter layerNo=0,neuronNo=0,numWeight=784,dataWidth=16, sigm
     input [31:0] weightValue, 
     input [31:0] biasValue,
     input [31:0] config_neuron_num,
+    input [31:0] config_layer_num, 
     output [dataWidth-1:0] out, 
-    output reg outvalid,
+    output reg outvalid
 );
     
     parameter addressWidth = $clog2(numWeight);
