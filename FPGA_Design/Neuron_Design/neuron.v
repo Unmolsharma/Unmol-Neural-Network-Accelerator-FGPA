@@ -177,9 +177,11 @@ module neuron # (parameter layerNo=0,neuronNo=0,numWeight=784,dataWidth=16, sigm
 
     `ifdef DEBUG
     always @(posedge clk)
-    begin
-        if(outvalid)
-            $display(neuronNo,,,,"%b",out);
-    end
+begin
+    if(rst|outvalid)
+        r_addr <= 0;
+    else if(myinputValid | weight_valid)
+        r_addr <= r_addr + 1;
+end
     `endif
 endmodule

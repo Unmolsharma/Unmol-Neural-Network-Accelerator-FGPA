@@ -7,7 +7,7 @@ module Weight_Memory #(parameter numWeight = 3, neuronNo=5,layerNo=1,addressWidt
     input wen,
     input ren,
     input [addressWidth-1:0] wadd,
-    input [addressWidth-1:0] radd,
+    input [addressWidth:0] radd,
     input [dataWidth-1:0] win,
     output reg [dataWidth-1:0] wout);
     
@@ -28,11 +28,11 @@ module Weight_Memory #(parameter numWeight = 3, neuronNo=5,layerNo=1,addressWidt
 		end 
     `endif
     
-    always @(posedge clk) 
+    always @(posedge clk)
     begin
-        if (ren)
+        if (ren && radd < numWeight)
         begin
-            wout <= mem[radd];// reads and outputs this memory to wout
+            wout <= mem[radd];
         end
-    end 
+    end
 endmodule
