@@ -16,6 +16,13 @@ module serializer #(
     reg [counterWidth-1:0] count;
     reg running;
 
+    // The producing layer drives its outputs for only one cycle (each neuron
+    // clears its accumulator as soon as it pulses outvalid, so its output
+    // collapses to sigmoid(0) on the next cycle). Latch the whole bus on
+    // in_valid and serialize out of the latched copy.
+    reg [numInputs*dataWidth-1:0] data_latched;
+    wire [dataWidth-1:0] selected_data = data_latched[count*dataWidth +: dataWidth];
+
     always @(posedge clk) begin
         if(rst) begin
             count    <= 0;
@@ -29,12 +36,13 @@ module serializer #(
             out_valid<= 0;
 
             if(in_valid && !running) begin
-                running  <= 1;
-                count    <= 0;
+                running     <= 1;
+                count       <= 0;
+                data_latched<= in_data;
             end
 
             if(running) begin
-                out_data  <= in_data[count*dataWidth +: dataWidth];
+                out_data  <= selected_data;
                 out_valid <= 1;
                 count     <= count + 1;
                 if(count == numInputs-1) begin
