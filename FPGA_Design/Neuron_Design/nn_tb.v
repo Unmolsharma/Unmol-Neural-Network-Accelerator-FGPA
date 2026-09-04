@@ -41,8 +41,8 @@ module nn_tb;
 
     NeuralNetwork #(
         .dataWidth(dataWidth),
-        .sigmoidSize(5),
-        .weightIntWidth(1)
+        .sigmoidSize(10),
+        .weightIntWidth(2)
     ) dut (
         .clk(clk),
         .rst(rst),

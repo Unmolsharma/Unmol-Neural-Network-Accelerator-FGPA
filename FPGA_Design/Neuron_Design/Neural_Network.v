@@ -3,8 +3,8 @@
 
 module NeuralNetwork #(
     parameter dataWidth      = 16,
-    parameter sigmoidSize    = 5,
-    parameter weightIntWidth = 1
+    parameter sigmoidSize    = 10,
+    parameter weightIntWidth = 2
 )(
     input  clk,
     input  rst,

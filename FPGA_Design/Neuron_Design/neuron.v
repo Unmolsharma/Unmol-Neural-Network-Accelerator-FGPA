@@ -2,7 +2,7 @@
 
 `include "include.v"
 
-module neuron # (parameter layerNo=0,neuronNo=0,numWeight=784,dataWidth=16, sigmoidSize=5, weightIntWidth=1,actType="relu",biasFile="",weightFile="")(
+module neuron # (parameter layerNo=0,neuronNo=0,numWeight=784,dataWidth=16, sigmoidSize=10, weightIntWidth=2,actType="relu",biasFile="",weightFile="")(
     input clk,
     input rst,
     input [dataWidth-1:0] myinput,
