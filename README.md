@@ -1,6 +1,6 @@
 # FPGA Neural Network Accelerator
 
-A fully synthesizable hardware implementation of a multilayer neural network for MNIST handwritten digit classification, written in Verilog. Every neuron is a physical digital circuit — multiply, accumulate, activate — running inference entirely in hardware with no CPU or GPU.
+A fully synthesizable hardware implementation of a multilayer neural network for MNIST handwritten digit classification, written in Verilog. Every neuron is a physical digital circuit doing a series of multiply, accumulate, activate while running inference entirely in hardware with no CPU or GPU.
 
 **95.24% accuracy** on MNIST · **Bit-exact RTL/software agreement** · **Synthesized for Lattice ECP5 FPGA**
 
@@ -64,7 +64,7 @@ Hardmax → predicted digit (0–9)
 
 ### Design Philosophy
 
-Each layer computes all of its neurons **in parallel** — that's the advantage of doing this in hardware. Each individual neuron processes its inputs **serially** (one per clock cycle) using a single multiplier, trading area for time. A serializer module between each pair of layers converts the parallel output bus into a serial input stream for the next layer.
+Each layer computes all of its neurons **in parallel** which is the advantage of doing this in hardware. Each individual neuron processes its inputs **serially** (one per clock cycle) using a single multiplier, trading area for time. A serializer module between each pair of layers converts the parallel output bus into a serial input stream for the next layer.
 
 ### Module Hierarchy
 
@@ -91,7 +91,7 @@ Each neuron performs a multiply-accumulate (MAC) operation with saturating arith
 
 1. Receives one input per clock cycle
 2. Multiplies it by the corresponding weight from a private ROM
-3. Accumulates with **saturation** — overflow clamps to max/min instead of wrapping
+3. Accumulates with **saturation** in which overflow clamps to max/min instead of wrapping
 4. After all inputs: adds the bias (also from ROM)
 5. Passes the result through a 1024-entry sigmoid lookup table
 6. Outputs the 16-bit fixed-point activation
