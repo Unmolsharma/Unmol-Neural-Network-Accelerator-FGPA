@@ -5,7 +5,7 @@ module neuron_tb;
 
     parameter dataWidth = 16;
     parameter numWeight = 4;
-    parameter sigmoidSize = 5;
+    parameter sigmoidSize = 10;
 
     reg clk, rst;
     reg [dataWidth-1:0] myinput;
@@ -25,7 +25,7 @@ module neuron_tb;
         .numWeight(numWeight),
         .dataWidth(dataWidth),
         .sigmoidSize(sigmoidSize),
-        .weightIntWidth(1),
+        .weightIntWidth(2),
         .actType("relu"),
         .biasFile("b_1_15.mif"),
         .weightFile("w_1_15.mif")
