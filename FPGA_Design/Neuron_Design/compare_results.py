@@ -2,9 +2,13 @@
 
 Run after:
     python baseline.py <N>
-    iverilog -o nn_tb.vvp -g2005 nn_tb.v Neural_Network.v layer.v Serializer.v \
-        hardmax.v neuron.v Weight_Memory.v Sig_ROM.v ReLU.v
+    iverilog -g2012 -o nn_tb.vvp nn_tb.sv Neural_Network.v layer.v Serializer.sv \
+        hardmax.sv neuron.v Weight_Memory.v Sig_ROM.v ReLU.v
     vvp nn_tb.vvp
+
+Note that nn_tb.sv already self-checks against baseline_predictions.txt and
+exits non-zero on any mismatch, so this script is now a convenience rather
+than the primary check.
 """
 
 def read_ints(path):

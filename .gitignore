@@ -1,0 +1,21 @@
+# Simulation build artifacts
+*.vvp
+*.vcd
+
+# Synthesis / place-and-route output (yosys, nextpnr/ECP5)
+synth_log.txt
+FPGA_Design/Neuron_Design/nn.config
+FPGA_Design/Neuron_Design/nn.json
+
+# Generated test vectors / results
+FPGA_Design/Neuron_Design/test_images_hex.txt
+FPGA_Design/Neuron_Design/test_image_0_hex.txt
+FPGA_Design/Neuron_Design/rtl_predictions.txt
+FPGA_Design/Neuron_Design/baseline_predictions.txt
+
+# Datasets
+**/data/MNIST/
+
+# Python
+__pycache__/
+*.pyc
