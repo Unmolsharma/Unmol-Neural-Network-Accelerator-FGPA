@@ -1,6 +1,6 @@
 # FPGA Neural Network Accelerator
 
-A fully synthesizable hardware implementation of a multilayer neural network for MNIST handwritten digit classification, written in Verilog. Every neuron is a physical digital circuit doing a series of multiply, accumulate, activate while running inference entirely in hardware with no CPU or GPU.
+A fully synthesizable hardware implementation of a multilayer neural network for MNIST handwritten digit classification, written in Verilog. Every neuron is a physical digital circuit — multiply, accumulate, activate — running inference entirely in hardware with no CPU or GPU.
 
 **95.24% accuracy** on MNIST · **Bit-exact RTL/software agreement** · **Synthesized for Lattice ECP5 FPGA**
 
@@ -64,7 +64,7 @@ Hardmax → predicted digit (0–9)
 
 ### Design Philosophy
 
-Each layer computes all of its neurons **in parallel** which is the advantage of doing this in hardware. Each individual neuron processes its inputs **serially** (one per clock cycle) using a single multiplier, trading area for time. A serializer module between each pair of layers converts the parallel output bus into a serial input stream for the next layer.
+Each layer computes all of its neurons **in parallel** — that's the advantage of doing this in hardware. Each individual neuron processes its inputs **serially** (one per clock cycle) using a single multiplier, trading area for time. A serializer module between each pair of layers converts the parallel output bus into a serial input stream for the next layer.
 
 ### Module Hierarchy
 
@@ -91,7 +91,7 @@ Each neuron performs a multiply-accumulate (MAC) operation with saturating arith
 
 1. Receives one input per clock cycle
 2. Multiplies it by the corresponding weight from a private ROM
-3. Accumulates with **saturation** in which overflow clamps to max/min instead of wrapping
+3. Accumulates with **saturation** — overflow clamps to max/min instead of wrapping
 4. After all inputs: adds the bias (also from ROM)
 5. Passes the result through a 1024-entry sigmoid lookup table
 6. Outputs the 16-bit fixed-point activation
@@ -157,7 +157,7 @@ The project includes a Python reference model (`baseline.py`) that replicates th
 - Same bias scaling and shifting
 - Same truncation/padding behavior as `$readmemb`
 
-Both RTL (Icarus Verilog simulation) and Python produce **identical predictions** on every test image, confirmed across 100 images with 100% agreement. The testbench (`nn_tb.v`) supports multi-image evaluation and exports predictions for automated comparison.
+Both RTL (Icarus Verilog simulation) and Python produce **identical predictions** on every test image, confirmed across 100 images with 100% agreement. The testbench (`nn_tb.sv`) checks every prediction against the Python baseline as it runs and fails the simulation on the first disagreement.
 
 ---
 
@@ -174,12 +174,12 @@ FPGA_Design/
 │   ├── neuron.v                # MAC + saturating accumulator + activation
 │   ├── Weight_Memory.v         # Per-neuron weight ROM (loaded from .mif)
 │   ├── Sig_ROM.v               # 1024-entry sigmoid lookup table
-│   ├── Serializer.v            # Parallel-to-serial converter between layers
-│   ├── hardmax.v               # Argmax of final 10 outputs
+│   ├── Serializer.sv           # Parallel-to-serial converter between layers
+│   ├── hardmax.sv              # Argmax of final 10 outputs
 │   ├── ReLU.v                  # Alternative activation (available, unused)
 │   ├── include.v               # Global defines and parameters
-│   ├── nn_tb.v                 # Full-network testbench
-│   ├── neuron_tb.v             # Single-neuron testbench
+│   ├── nn_tb.sv                # Full-network testbench (SystemVerilog, self-checking)
+│   ├── neuron_tb.sv            # Single-neuron testbench (self-checking)
 │   ├── baseline.py             # Python reference model (bit-exact)
 │   ├── evaluate.py             # Full test-set evaluation
 │   ├── sigContent.mif          # Sigmoid lookup table (1024 × 16-bit)
@@ -219,11 +219,61 @@ Outputs the predicted digit and true label for the first MNIST test image.
 
 ### Simulate the Hardware
 
+The full-network testbench is SystemVerilog, so it needs `-g2012`:
+
 ```bash
 cd FPGA_Design/Neuron_Design
-iverilog -o nn_tb.vvp -g2005 nn_tb.v Neural_Network.v layer.v Serializer.v \
-    hardmax.v neuron.v Weight_Memory.v Sig_ROM.v ReLU.v
+iverilog -g2012 -o nn_tb.vvp nn_tb.sv Neural_Network.v layer.v Serializer.sv \
+    hardmax.sv neuron.v Weight_Memory.v Sig_ROM.v ReLU.v
 vvp nn_tb.vvp
+```
+
+It self-checks against `baseline_predictions.txt` and exits non-zero on any
+mismatch, timeout, or missing stimulus, so it can be run directly in CI. All
+of its knobs are runtime plusargs -- none of them need a rebuild:
+
+| Plusarg | Default | Meaning |
+|---|---|---|
+| `+images=N` | 100 | How many images to classify |
+| `+imagefile=<path>` | `test_images_hex.txt` | Stimulus file |
+| `+golden=<path>` | `baseline_predictions.txt` | Reference predictions (self-check skipped if absent) |
+| `+results=<path>` | `rtl_predictions.txt` | Where predictions are written |
+| `+timeout=N` | 5000 | Watchdog cycles per image |
+| `+dump` | off | Write `nn_tb.vcd` |
+| `+quiet` | off | Summary only, no per-image lines |
+
+```bash
+vvp nn_tb.vvp +images=10          # quick smoke test
+vvp nn_tb.vvp +quiet              # summary only
+vvp nn_tb.vvp +dump               # waveforms for GTKWave
+```
+
+The only compile-time knob left is the stimulus array size, because
+`$readmemh` can only fill a static memory. It defaults to 1000 images:
+
+```bash
+iverilog -g2012 -DMAX_IMAGES=10000 -o nn_tb.vvp nn_tb.sv ...
+```
+
+At compile time Icarus prints two `sorry: constant selects in always_*
+processes are not fully supported` notes for `hardmax.sv`. They say the
+`always_comb` block will be sensitive to every bit of `in_data`, which is
+exactly what an argmax over the whole bus should be. They are cosmetic.
+
+Icarus prints two more families of harmless warnings during a run: a `$readmemb
+... behaviour changed in the 1364-2005 standard` note from `Sig_ROM.v` and
+`Weight_Memory.v`, and a `$readmemh: Not enough words in the file` note when
+the image file holds fewer than `MAX_IMAGES` images. Filter them with
+`vvp nn_tb.vvp 2>&1 | grep -v "^WARNING"`.
+
+The single-neuron testbench is self-checking too. It carries a reference
+model of the neuron datapath (saturating MAC, bias, ReLU) and compares every
+vector against it:
+
+```bash
+iverilog -g2012 -o neuron_tb.vvp neuron_tb.sv neuron.v \
+    Weight_Memory.v Sig_ROM.v ReLU.v
+vvp neuron_tb.vvp
 ```
 
 ### FPGA Synthesis (Yosys + nextpnr)
@@ -231,7 +281,7 @@ vvp nn_tb.vvp
 ```bash
 # Comment out `define pretrained in include.v first
 yosys -p "read_verilog include.v Neural_Network.v layer.v neuron.v \
-    Weight_Memory.v Sig_ROM.v Serializer.v hardmax.v ReLU.v; \
+    Weight_Memory.v Sig_ROM.v ReLU.v; read_verilog -sv Serializer.sv hardmax.sv; \
     synth_ecp5 -top NeuralNetwork -json nn.json"
 
 nextpnr-ecp5 --85k --package CABGA381 --json nn.json --freq 100 --textcfg nn.config
